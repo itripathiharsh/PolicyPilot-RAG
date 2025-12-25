@@ -1,0 +1,19 @@
+# Core Framework
+langchain==0.3.0
+langchain-community==0.3.0
+langchain-core==0.3.0
+
+# LLM Providers
+langchain-groq==0.2.0
+langchain-openai==0.3.0
+
+# Local Embeddings (No OpenAI needed)
+langchain-huggingface==0.1.0
+sentence-transformers==3.0.1
+torch==2.4.0
+
+# Vector Store & Data
+faiss-cpu==1.8.0
+pypdf==4.3.1
+python-dotenv==1.0.1
+tiktoken==0.7.0

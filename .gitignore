@@ -1,0 +1,39 @@
+# --- Environment & Secrets ---
+.env
+.env.local
+.venv/
+env/
+venv/
+ENV/
+
+# --- Vector Database ---
+# We ignore the local FAISS index so the recruiter's system 
+# generates it fresh from your data folder.
+vectorstore/
+faiss_index/
+*.index
+*.pkl
+
+# --- Python Cache & Temporary Files ---
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Data & OS ---
+# If you have very large PDFs, you might ignore them, 
+# but for this assignment, we keep 'data/' tracked.
+.DS_Store
+Thumbs.db
+
+# --- IDEs ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- Logs ---
+*.log
+pip-log.txt
