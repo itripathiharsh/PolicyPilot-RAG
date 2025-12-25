@@ -1,39 +1,44 @@
-# --- Environment & Secrets ---
+# --- API Keys & Secrets ---
+# NEVER push these. The recruiter will use their own keys.
 .env
 .env.local
-.venv/
-env/
-venv/
-ENV/
+.streamlit/secrets.toml
 
-# --- Vector Database ---
-# We ignore the local FAISS index so the recruiter's system 
-# generates it fresh from your data folder.
+# --- Virtual Environment ---
+venv/
+env/
+ENV/
+.venv/
+bin/
+lib/
+include/
+
+# --- Vector Database (FAISS) ---
+# We ignore the local index so the app builds it fresh from 'data/'
 vectorstore/
 faiss_index/
 *.index
 *.pkl
 
-# --- Python Cache & Temporary Files ---
+# --- Hugging Face & Embeddings Cache ---
+# Local cache for downloaded models
+.cache/
+hf_home/
+models/
+.huggingface/
+
+# --- Python System Files ---
 __pycache__/
 *.py[cod]
 *$py.class
 .pytest_cache/
-.mypy_cache/
-.ruff_cache/
+.python-version
 
-# --- Data & OS ---
-# If you have very large PDFs, you might ignore them, 
-# but for this assignment, we keep 'data/' tracked.
+# --- Streamlit Temporary Files ---
+.streamlit/config.toml
+static/
+uploaded_files/
+
+# --- OS Specific ---
 .DS_Store
 Thumbs.db
-
-# --- IDEs ---
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# --- Logs ---
-*.log
-pip-log.txt

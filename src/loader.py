@@ -1,61 +1,64 @@
 import os
+from typing import List
 from langchain_community.document_loaders import PyPDFLoader, DirectoryLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 
-def ingest_documents(data_path: str, store_path: str):
-    """
-    Reads documents, chunks them, generates local embeddings, 
-    and saves a FAISS vector database.
-    """
-    
-    # 1. Load Data
-    # Support for both PDFs and Markdown/Text policy files
-    pdf_loader = DirectoryLoader(data_path, glob="./*.pdf", loader_cls=PyPDFLoader)
-    txt_loader = DirectoryLoader(data_path, glob="./*.md", loader_cls=TextLoader)
-    
-    docs = pdf_loader.load() + txt_loader.load()
-    
-    if not docs:
-        raise ValueError(f"No documents found in {data_path}. Please add some policy files.")
+class DocumentProcessor:
+    def __init__(self, data_path: str = "data/", store_path: str = "vectorstore/db_faiss"):
+        self.data_path = data_path
+        self.store_path = store_path
+        
+        # Consistent Embedding Model across the system
+        # Running on CPU for local cost-efficiency
+        self.embeddings = HuggingFaceEmbeddings(
+            model_name="sentence-transformers/all-MiniLM-L6-v2",
+            model_kwargs={'device': 'cpu'}
+        )
+        
+        # Policy-optimized splitting strategy
+        self.text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=600,
+            chunk_overlap=60,
+            separators=["\n\n", "\n", ".", " ", ""]
+        )
 
-    # 2. Chunking Strategy
-    # We use 600 characters with a 60-character overlap.
-    # This ensures that policy rules aren't cut in half and context is preserved.
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=600,
-        chunk_overlap=60,
-        length_function=len,
-        add_start_index=True,
-    )
-    chunks = text_splitter.split_documents(docs)
+    def process_and_save(self, existing_vectorstore=None):
+        """
+        Loads documents from the data directory, chunks them, and 
+        updates/creates the FAISS index.
+        """
+        # 1. Load all PDFs and Markdown files in the data directory
+        pdf_loader = DirectoryLoader(self.data_path, glob="./*.pdf", loader_cls=PyPDFLoader)
+        txt_loader = DirectoryLoader(self.data_path, glob="./*.md", loader_cls=TextLoader)
+        
+        documents = pdf_loader.load() + txt_loader.load()
+        
+        if not documents:
+            print(" No documents found to ingest.")
+            return existing_vectorstore
 
-    # 3. Local Embeddings (Free & Fast)
-    # This model runs on your CPU. No API key required.
-    embeddings = HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-MiniLM-L6-v2",
-        model_kwargs={'device': 'cpu'}
-    )
+        # 2. Split into semantic chunks
+        chunks = self.text_splitter.split_documents(documents)
+        
+        # 3. Create or Update Vector Store
+        if existing_vectorstore:
+            # If we already have a DB, just add the new documents
+            existing_vectorstore.add_documents(chunks)
+            vectorstore = existing_vectorstore
+        else:
+            # Create a fresh DB
+            vectorstore = FAISS.from_documents(chunks, self.embeddings)
 
-    # 4. Create and Save Vector Store
-    # FAISS is used for efficient similarity search
-    vectorstore = FAISS.from_documents(chunks, embeddings)
-    
-    # Ensure the directory exists before saving
-    os.makedirs(os.path.dirname(store_path), exist_ok=True)
-    vectorstore.save_local(store_path)
-    
-    print(f" Ingestion complete. {len(chunks)} chunks saved to {store_path}")
-    return vectorstore
+        # 4. Save locally
+        os.makedirs(os.path.dirname(self.store_path), exist_ok=True)
+        vectorstore.save_local(self.store_path)
+        
+        print(f" Successfully indexed {len(chunks)} chunks.")
+        return vectorstore
 
-if __name__ == "__main__":
-    # Test block for local debugging
-    DATA_DIR = "data"
-    STORE_DIR = "vectorstore/db_faiss"
-    
-    if not os.path.exists(DATA_DIR):
-        os.makedirs(DATA_DIR)
-        print(f"Created {DATA_DIR} folder. Please add your PDFs there.")
-    else:
-        ingest_documents(DATA_DIR, STORE_DIR)
+# Functional wrapper for main.py/app.py use
+def ingest_documents(data_path: str, store_path: str, existing_vs=None):
+    processor = DocumentProcessor(data_path, store_path)
+    return processor.process_and_save(existing_vs)

@@ -1,46 +1,32 @@
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 # ==========================================
-# VERSION 1: INITIAL BASELINE PROMPT
+# PRODUCTION RAG PROMPT (v3)
 # ==========================================
-# This version is for your "Before" demonstration. 
-# It's simple and lacks strict guardrails.
-PROMPT_V1 = ChatPromptTemplate.from_template("""
-Answer the following question based on the provided context.
+# This version supports:
+# 1. System Persona: Professional and objective.
+# 2. History Awareness: Uses MessagesPlaceholder for multi-turn chat.
+# 3. Grounding: Strict "I don't know" rule to prevent hallucinations.
+# 4. Context Isolation: Clearly separates retrieved data from conversation history.
 
-Context:
-{context}
-
-Question: 
-{question}
-""")
-
-# ==========================================
-# VERSION 2: IMPROVED PRODUCTION PROMPT
-# ==========================================
-# This version includes:
-# 1. Persona Setting: "Professional Policy Assistant"
-# 2. Strict Grounding: Explicit instruction to only use context.
-# 3. Handling Uncertainty: Graceful refusal if answer isn't found.
-# 4. Output Structuring: Requirements for formatting and citations.
-# 5. Hallucination Control: Direct order not to use external info.
-
-PROMPT_V2 = ChatPromptTemplate.from_template("""
+SYSTEM_INSTRUCTION = """
 You are a Professional Company Policy Assistant. Your sole objective is to provide accurate, grounded, and concise answers based strictly on the provided policy documents.
 
 ### CONSTRAINTS AND RULES:
-1. **Source Grounding**: Use ONLY the information provided in the Context below. Do not use outside knowledge or make up information.
+1. **Source Grounding**: Use ONLY the information provided in the [CONTEXT] block below. Do not use outside knowledge or make up information.
 2. **Missing Information**: If the answer is not contained within the provided Context, you must say: 
    "I'm sorry, but our current policy documents do not contain information to answer that specific question."
-3. **Format**: Use clear bullet points for any lists or step-by-step processes.
-4. **Tone**: Maintain a professional, helpful, and neutral customer-service tone.
-5. **Citations**: At the very end of your response, list the source document names used to generate the answer (e.g., [Refund Policy]).
+3. **Format**: Use clear bullet points for lists. Keep responses under 150 words.
+4. **Citations**: Always name the source document at the end of your response (e.g., [Source: Refund Policy]).
+5. **No Hallucination**: If the user asks for information outside of company policies (e.g., weather, news, personal opinions), politely decline.
 
-### CONTEXT PROVIDED:
+### CONTEXT FOR THIS REQUEST:
 {context}
+"""
 
-### USER QUESTION:
-{question}
-
-### ASSISTANT RESPONSE:
-""")
+PROMPT_V2 = ChatPromptTemplate.from_messages([
+    ("system", SYSTEM_INSTRUCTION),
+    # This is where your Chat History (last 5 messages) is injected
+    MessagesPlaceholder(variable_name="history"),
+    ("human", "{question}")
+])
