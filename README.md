@@ -1,6 +1,10 @@
 
 # PolicyPilot-RAG
 
+🔗 **Live Demo (Hugging Face Space):**  
+https://huggingface.co/spaces/The-Arthur-Morgan/PolicyPilot-RAG
+
+
 ### High-Availability Retrieval-Augmented AI Policy Assistant
 
 PolicyPilot-RAG is a **production-grade RAG system** built to deliver reliable, low-latency answers over policy documents. It combines **hybrid document ingestion**, **local vector search**, and a **15-tier LLM fallback engine** to maintain availability even under API failures or rate limits.
